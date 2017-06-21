@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////
 //
-// Copyright 2014 Realm Inc.
+// Copyright 2017 Realm Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,71 +18,389 @@
 
 #import "RLMTestCase.h"
 
-@implementation DogArrayObject
+@interface PrimitiveArrayPropertyTests : RLMTestCase
 @end
 
-@interface ArrayPropertyTests : RLMTestCase
-@end
+@implementation PrimitiveArrayPropertyTests {
+    AllPrimitiveArrays *unmanaged;
+    AllPrimitiveArrays *managed;
+    AllOptionalPrimitiveArrays *optUnmanaged;
+    AllOptionalPrimitiveArrays *optManaged;
+    RLMRealm *realm;
+}
 
-@implementation ArrayPropertyTests
-
--(void)testPopulateEmptyArray {
-    RLMRealm *realm = [self realmWithTestPath];
-
+- (void)setUp {
+    unmanaged = [[AllPrimitiveArrays alloc] init];
+    optUnmanaged = [[AllOptionalPrimitiveArrays alloc] init];
+    realm = [RLMRealm defaultRealm];
     [realm beginWriteTransaction];
-    ArrayPropertyObject *array = [ArrayPropertyObject createInRealm:realm withValue:@[@"arrayObject", @[], @[]]];
-    XCTAssertNotNil(array.array, @"Should be able to get an empty array");
-    XCTAssertEqual(array.array.count, 0U, @"Should start with no array elements");
+    managed = [AllPrimitiveArrays createInRealm:realm withValue:@[]];
+    optManaged = [AllOptionalPrimitiveArrays createInRealm:realm withValue:@[]];
+}
 
-    StringObject *obj = [[StringObject alloc] init];
-    obj.stringCol = @"a";
-    [array.array addObject:obj];
-    [array.array addObject:[StringObject createInRealm:realm withValue:@[@"b"]]];
-    [array.array addObject:obj];
-    [realm commitWriteTransaction];
+- (void)tearDown {
+    [realm cancelWriteTransaction];
+}
 
-    XCTAssertEqual(array.array.count, 3U, @"Should have three elements in array");
-    XCTAssertEqualObjects([array.array[0] stringCol], @"a", @"First element should have property value 'a'");
-    XCTAssertEqualObjects([array.array[1] stringCol], @"b", @"Second element should have property value 'b'");
-    XCTAssertEqualObjects([array.array[2] stringCol], @"a", @"Third element should have property value 'a'");
+- (void)testUnmanagedCount {
+    XCTAssertEqual(unmanaged.intObj.count, 0U);
+    [unmanaged.intObj addObject:@1];
+    XCTAssertEqual(unmanaged.intObj.count, 1U);
+}
 
-    RLMArray *arrayProp = array.array;
-    RLMAssertThrowsWithReasonMatching([arrayProp addObject:obj], @"write transaction");
+- (void)testUnmanagedType {
+    XCTAssertEqual(unmanaged.boolObj.type, RLMPropertyTypeBool);
+    XCTAssertEqual(unmanaged.intObj.type, RLMPropertyTypeInt);
+    XCTAssertEqual(unmanaged.floatObj.type, RLMPropertyTypeFloat);
+    XCTAssertEqual(unmanaged.doubleObj.type, RLMPropertyTypeDouble);
+    XCTAssertEqual(unmanaged.stringObj.type, RLMPropertyTypeString);
+    XCTAssertEqual(unmanaged.dataObj.type, RLMPropertyTypeData);
+    XCTAssertEqual(unmanaged.dateObj.type, RLMPropertyTypeDate);
+    XCTAssertEqual(optUnmanaged.boolObj.type, RLMPropertyTypeBool);
+    XCTAssertEqual(optUnmanaged.intObj.type, RLMPropertyTypeInt);
+    XCTAssertEqual(optUnmanaged.floatObj.type, RLMPropertyTypeFloat);
+    XCTAssertEqual(optUnmanaged.doubleObj.type, RLMPropertyTypeDouble);
+    XCTAssertEqual(optUnmanaged.stringObj.type, RLMPropertyTypeString);
+    XCTAssertEqual(optUnmanaged.dataObj.type, RLMPropertyTypeData);
+    XCTAssertEqual(optUnmanaged.dateObj.type, RLMPropertyTypeDate);
+}
 
-    // make sure we can fast enumerate
-    for (RLMObject *obj in array.array) {
-        XCTAssertTrue(obj.description.length, @"Object should have description");
+- (void)testUnmanagedOptional {
+    XCTAssertFalse(unmanaged.boolObj.optional);
+    XCTAssertFalse(unmanaged.intObj.optional);
+    XCTAssertFalse(unmanaged.floatObj.optional);
+    XCTAssertFalse(unmanaged.doubleObj.optional);
+    XCTAssertFalse(unmanaged.stringObj.optional);
+    XCTAssertFalse(unmanaged.dataObj.optional);
+    XCTAssertFalse(unmanaged.dateObj.optional);
+    XCTAssertTrue(optUnmanaged.boolObj.optional);
+    XCTAssertTrue(optUnmanaged.intObj.optional);
+    XCTAssertTrue(optUnmanaged.floatObj.optional);
+    XCTAssertTrue(optUnmanaged.doubleObj.optional);
+    XCTAssertTrue(optUnmanaged.stringObj.optional);
+    XCTAssertTrue(optUnmanaged.dataObj.optional);
+    XCTAssertTrue(optUnmanaged.dateObj.optional);
+}
+
+- (void)testUnmanagedObjectClassName {
+    XCTAssertNil(unmanaged.boolObj.objectClassName);
+    XCTAssertNil(unmanaged.intObj.objectClassName);
+    XCTAssertNil(unmanaged.floatObj.objectClassName);
+    XCTAssertNil(unmanaged.doubleObj.objectClassName);
+    XCTAssertNil(unmanaged.stringObj.objectClassName);
+    XCTAssertNil(unmanaged.dataObj.objectClassName);
+    XCTAssertNil(unmanaged.dateObj.objectClassName);
+    XCTAssertNil(optUnmanaged.boolObj.objectClassName);
+    XCTAssertNil(optUnmanaged.intObj.objectClassName);
+    XCTAssertNil(optUnmanaged.floatObj.objectClassName);
+    XCTAssertNil(optUnmanaged.doubleObj.objectClassName);
+    XCTAssertNil(optUnmanaged.stringObj.objectClassName);
+    XCTAssertNil(optUnmanaged.dataObj.objectClassName);
+    XCTAssertNil(optUnmanaged.dateObj.objectClassName);
+}
+
+- (void)testUnmanagedRealm {
+    XCTAssertNil(unmanaged.boolObj.realm);
+    XCTAssertNil(unmanaged.intObj.realm);
+    XCTAssertNil(unmanaged.floatObj.realm);
+    XCTAssertNil(unmanaged.doubleObj.realm);
+    XCTAssertNil(unmanaged.stringObj.realm);
+    XCTAssertNil(unmanaged.dataObj.realm);
+    XCTAssertNil(unmanaged.dateObj.realm);
+    XCTAssertNil(optUnmanaged.boolObj.realm);
+    XCTAssertNil(optUnmanaged.intObj.realm);
+    XCTAssertNil(optUnmanaged.floatObj.realm);
+    XCTAssertNil(optUnmanaged.doubleObj.realm);
+    XCTAssertNil(optUnmanaged.stringObj.realm);
+    XCTAssertNil(optUnmanaged.dataObj.realm);
+    XCTAssertNil(optUnmanaged.dateObj.realm);
+}
+
+- (void)testUnmanagedInvalidated {
+    RLMArray *array;
+    @autoreleasepool {
+        AllPrimitiveArrays *obj = [[AllPrimitiveArrays alloc] init];
+        array = obj.intObj;
+        XCTAssertFalse(array.invalidated);
     }
+    XCTAssertFalse(array.invalidated);
 }
 
--(void)testModifyDetatchedArray {
-    RLMRealm *realm = [self realmWithTestPath];
 
-    [realm beginWriteTransaction];
-    ArrayPropertyObject *arObj = [ArrayPropertyObject createInRealm:realm withValue:@[@"arrayObject", @[], @[]]];
-    XCTAssertNotNil(arObj.array, @"Should be able to get an empty array");
-    XCTAssertEqual(arObj.array.count, 0U, @"Should start with no array elements");
+// unmanaged.boolObj @YES @NO
+// unmanaged.intObj @2 @3
+// unmanaged.floatObj @2.2f @3.3f
+// unmanaged.doubleObj @2.2 @3.3
+// unmanaged.stringObj @"a" @"b"
+// unmanaged.dataObj data(1) data(2)
+// unmanaged.dateObj date(1) date(2)
+// optUnmanaged.boolObj @YES @NO NSNull.null
+// optUnmanaged.intObj @2 @3 NSNull.null
+// optUnmanaged.floatObj @2.2f @3.3f NSNull.null
+// optUnmanaged.doubleObj @2.2 @3.3 NSNull.null
+// optUnmanaged.stringObj @"a" @"b" NSNull.null
+// optUnmanaged.dataObj data(1) data(2) NSNull.null
+// optUnmanaged.dateObj date(1) date(2) NSNull.null
 
-    StringObject *obj = [[StringObject alloc] init];
-    obj.stringCol = @"a";
-    RLMArray *array = arObj.array;
-    [array addObject:obj];
-    [array addObject:[StringObject createInRealm:realm withValue:@[@"b"]]];
-    [realm commitWriteTransaction];
-
-    XCTAssertEqual(array.count, 2U, @"Should have two elements in array");
-    XCTAssertEqualObjects([array[0] stringCol], @"a", @"First element should have property value 'a'");
-    XCTAssertEqualObjects([arObj.array[1] stringCol], @"b", @"Second element should have property value 'b'");
-
-    RLMAssertThrowsWithReasonMatching([array addObject:obj], @"write transaction");
+static NSDate *date(int i) {
+    return [NSDate dateWithTimeIntervalSince1970:i];
+}
+static NSData *data(int i) {
+    return [NSData dataWithBytesNoCopy:calloc(i, 1) length:i freeWhenDone:YES];
 }
 
-- (void)testDeleteUnmanagedObjectWithArrayProperty {
-    ArrayPropertyObject *arObj = [[ArrayPropertyObject alloc] initWithValue:@[@"arrayObject", @[@[@"a"]], @[]]];
-    RLMArray *stringArray = arObj.array;
-    XCTAssertFalse(stringArray.isInvalidated, @"stringArray should be valid after creation.");
-    arObj = nil;
-    XCTAssertFalse(stringArray.isInvalidated, @"stringArray should still be valid after parent deletion.");
+- (void)testUnmanagedObjectAtIndex {
+    RLMAssertThrowsWithReason([unmanaged.intObj objectAtIndex:0],
+                              @"Index 0 is out of bounds (must be less than 0).");
+
+    [unmanaged.intObj addObject:@1];
+    XCTAssertEqualObjects([unmanaged.intObj objectAtIndex:0], @1);
+}
+
+- (void)testUnmanagedFirstObject {
+    XCTAssertNil(unmanaged.boolObj.firstObject);
+    XCTAssertNil(unmanaged.intObj.firstObject);
+    XCTAssertNil(unmanaged.floatObj.firstObject);
+    XCTAssertNil(unmanaged.doubleObj.firstObject);
+    XCTAssertNil(unmanaged.stringObj.firstObject);
+    XCTAssertNil(unmanaged.dataObj.firstObject);
+    XCTAssertNil(unmanaged.dateObj.firstObject);
+    XCTAssertNil(optUnmanaged.boolObj.firstObject);
+    XCTAssertNil(optUnmanaged.intObj.firstObject);
+    XCTAssertNil(optUnmanaged.floatObj.firstObject);
+    XCTAssertNil(optUnmanaged.doubleObj.firstObject);
+    XCTAssertNil(optUnmanaged.stringObj.firstObject);
+    XCTAssertNil(optUnmanaged.dataObj.firstObject);
+    XCTAssertNil(optUnmanaged.dateObj.firstObject);
+
+    [unmanaged.boolObj addObjects:@[@YES, @NO]];
+    [unmanaged.intObj addObjects:@[@2, @3]];
+    [unmanaged.floatObj addObjects:@[@2.2f, @3.3f]];
+    [unmanaged.doubleObj addObjects:@[@2.2, @3.3]];
+    [unmanaged.stringObj addObjects:@[@"a", @"b"]];
+    [unmanaged.dataObj addObjects:@[data(1), data(2)]];
+    [unmanaged.dateObj addObjects:@[date(1), date(2)]];
+    XCTAssertEqualObjects(unmanaged.boolObj.firstObject, @YES);
+    XCTAssertEqualObjects(unmanaged.intObj.firstObject, @2);
+    XCTAssertEqualObjects(unmanaged.floatObj.firstObject, @2.2f);
+    XCTAssertEqualObjects(unmanaged.doubleObj.firstObject, @2.2);
+    XCTAssertEqualObjects(unmanaged.stringObj.firstObject, @"a");
+    XCTAssertEqualObjects(unmanaged.dataObj.firstObject, data(1));
+    XCTAssertEqualObjects(unmanaged.dateObj.firstObject, date(1));
+
+    [optUnmanaged.boolObj addObject:NSNull.null];
+    [optUnmanaged.intObj addObject:NSNull.null];
+    [optUnmanaged.floatObj addObject:NSNull.null];
+    [optUnmanaged.doubleObj addObject:NSNull.null];
+    [optUnmanaged.stringObj addObject:NSNull.null];
+    [optUnmanaged.dataObj addObject:NSNull.null];
+    [optUnmanaged.dateObj addObject:NSNull.null];
+
+    XCTAssertEqualObjects(optUnmanaged.boolObj.firstObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.intObj.firstObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.floatObj.firstObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.doubleObj.firstObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.stringObj.firstObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.dataObj.firstObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.dateObj.firstObject, NSNull.null);
+
+    [optUnmanaged.boolObj removeAllObjects];
+    [optUnmanaged.intObj removeAllObjects];
+    [optUnmanaged.floatObj removeAllObjects];
+    [optUnmanaged.doubleObj removeAllObjects];
+    [optUnmanaged.stringObj removeAllObjects];
+    [optUnmanaged.dataObj removeAllObjects];
+    [optUnmanaged.dateObj removeAllObjects];
+
+    [optUnmanaged.boolObj addObjects:@[@YES, @NO]];
+    [optUnmanaged.intObj addObjects:@[@2, @3]];
+    [optUnmanaged.floatObj addObjects:@[@2.2f, @3.3f]];
+    [optUnmanaged.doubleObj addObjects:@[@2.2, @3.3]];
+    [optUnmanaged.stringObj addObjects:@[@"a", @"b"]];
+    [optUnmanaged.dataObj addObjects:@[data(1), data(2)]];
+    [optUnmanaged.dateObj addObjects:@[date(1), date(2)]];
+
+    XCTAssertEqualObjects(optUnmanaged.boolObj.firstObject, @YES);
+    XCTAssertEqualObjects(optUnmanaged.intObj.firstObject, @2);
+    XCTAssertEqualObjects(optUnmanaged.floatObj.firstObject, @2.2f);
+    XCTAssertEqualObjects(optUnmanaged.doubleObj.firstObject, @2.2);
+    XCTAssertEqualObjects(optUnmanaged.stringObj.firstObject, @"a");
+    XCTAssertEqualObjects(optUnmanaged.dataObj.firstObject, data(1));
+    XCTAssertEqualObjects(optUnmanaged.dateObj.firstObject, date(1));
+}
+
+- (void)testUnmanagedLastObject {
+    XCTAssertNil(unmanaged.boolObj.lastObject);
+    XCTAssertNil(unmanaged.intObj.lastObject);
+    XCTAssertNil(unmanaged.floatObj.lastObject);
+    XCTAssertNil(unmanaged.doubleObj.lastObject);
+    XCTAssertNil(unmanaged.stringObj.lastObject);
+    XCTAssertNil(unmanaged.dataObj.lastObject);
+    XCTAssertNil(unmanaged.dateObj.lastObject);
+    XCTAssertNil(optUnmanaged.boolObj.lastObject);
+    XCTAssertNil(optUnmanaged.intObj.lastObject);
+    XCTAssertNil(optUnmanaged.floatObj.lastObject);
+    XCTAssertNil(optUnmanaged.doubleObj.lastObject);
+    XCTAssertNil(optUnmanaged.stringObj.lastObject);
+    XCTAssertNil(optUnmanaged.dataObj.lastObject);
+    XCTAssertNil(optUnmanaged.dateObj.lastObject);
+
+    [unmanaged.boolObj addObjects:@[@YES, @NO]];
+    [unmanaged.intObj addObjects:@[@2, @3]];
+    [unmanaged.floatObj addObjects:@[@2.2f, @3.3f]];
+    [unmanaged.doubleObj addObjects:@[@2.2, @3.3]];
+    [unmanaged.stringObj addObjects:@[@"a", @"b"]];
+    [unmanaged.dataObj addObjects:@[data(1), data(2)]];
+    [unmanaged.dateObj addObjects:@[date(1), date(2)]];
+    XCTAssertEqualObjects(unmanaged.boolObj.lastObject, @NO);
+    XCTAssertEqualObjects(unmanaged.intObj.lastObject, @3);
+    XCTAssertEqualObjects(unmanaged.floatObj.lastObject, @3.3f);
+    XCTAssertEqualObjects(unmanaged.doubleObj.lastObject, @3.3);
+    XCTAssertEqualObjects(unmanaged.stringObj.lastObject, @"b");
+    XCTAssertEqualObjects(unmanaged.dataObj.lastObject, data(2));
+    XCTAssertEqualObjects(unmanaged.dateObj.lastObject, date(2));
+
+    [optUnmanaged.boolObj addObject:NSNull.null];
+    [optUnmanaged.intObj addObject:NSNull.null];
+    [optUnmanaged.floatObj addObject:NSNull.null];
+    [optUnmanaged.doubleObj addObject:NSNull.null];
+    [optUnmanaged.stringObj addObject:NSNull.null];
+    [optUnmanaged.dataObj addObject:NSNull.null];
+    [optUnmanaged.dateObj addObject:NSNull.null];
+
+    XCTAssertEqualObjects(optUnmanaged.boolObj.lastObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.intObj.lastObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.floatObj.lastObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.doubleObj.lastObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.stringObj.lastObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.dataObj.lastObject, NSNull.null);
+    XCTAssertEqualObjects(optUnmanaged.dateObj.lastObject, NSNull.null);
+
+    [optUnmanaged.boolObj addObjects:@[@YES, @NO]];
+    [optUnmanaged.intObj addObjects:@[@2, @3]];
+    [optUnmanaged.floatObj addObjects:@[@2.2f, @3.3f]];
+    [optUnmanaged.doubleObj addObjects:@[@2.2, @3.3]];
+    [optUnmanaged.stringObj addObjects:@[@"a", @"b"]];
+    [optUnmanaged.dataObj addObjects:@[data(1), data(2)]];
+    [optUnmanaged.dateObj addObjects:@[date(1), date(2)]];
+
+    XCTAssertEqualObjects(optUnmanaged.boolObj.lastObject, @NO);
+    XCTAssertEqualObjects(optUnmanaged.intObj.lastObject, @3);
+    XCTAssertEqualObjects(optUnmanaged.floatObj.lastObject, @3.3f);
+    XCTAssertEqualObjects(optUnmanaged.doubleObj.lastObject, @3.3);
+    XCTAssertEqualObjects(optUnmanaged.stringObj.lastObject, @"b");
+    XCTAssertEqualObjects(optUnmanaged.dataObj.lastObject, data(2));
+    XCTAssertEqualObjects(optUnmanaged.dateObj.lastObject, date(2));
+}
+
+- (void)testUnmanagedAddObject {
+    RLMAssertThrowsWithReason([unmanaged.intObj addObject:@"a"],
+                              @"Invalid value 'a' of type '__NSCFConstantString' for array of 'int'");
+    RLMAssertThrowsWithReason([unmanaged.intObj addObject:NSNull.null],
+                              @"Invalid value '<null>' of type 'NSNull' for array of 'int'");
+}
+
+- (void)testUnmanagedAddObjects {
+
+}
+
+- (void)testUnmanagedInsertObject {
+
+}
+
+- (void)testUnmanagedRemoveObject {
+    AllPrimitiveArrays *obj = [[AllPrimitiveArrays alloc] init];
+    RLMAssertThrowsWithReason([obj.intObj removeObjectAtIndex:0],
+                              @"Index 0 is out of bounds (must be less than 0).");
+
+}
+
+- (void)testUnmanagedRemoveLastObject {
+
+}
+
+- (void)testUnmanagedReplace {
+
+}
+
+- (void)testUnmanagedMove {
+
+}
+
+- (void)testUnmanagedExchange {
+
+}
+
+- (void)testUnmanagedIndexOfObject {
+
+}
+
+- (void)testUnmanagedIndexOfObjectWhere {
+
+}
+
+- (void)testUnmanagedIndexOfObjectWithPredicate {
+
+}
+
+- (void)testUnmanagedSort {
+
+}
+
+- (void)testUnmanagedNotifications {
+
+}
+
+- (void)testUnmanagedMin {
+
+}
+
+- (void)testUnmanagedMax {
+
+}
+
+- (void)testUnmanagedSum {
+
+}
+
+- (void)testUnmanagedAverage {
+
+}
+
+- (void)testUnmanagedFastEnumeration {
+
+}
+
+- (void)testUnmanagedFastEnumerationWithMutation {
+
+}
+
+- (void)testUnmanagedValueForKey {
+
+}
+
+- (void)testUnmanagedSetValueForKey {
+
+}
+
+- (void)testUnmanagedAssignment {
+
+}
+
+- (void)testUnmanagedDescription {
+
+}
+
+#if 0
+- (void)testUnmanagedArrayCanOutliveParentObject {
+    RLMArray *array;
+    @autoreleasepool {
+        ArrayPropertyObject *arObj = [[ArrayPropertyObject alloc] initWithValue:@[@"arrayObject", @[@[@"a"]], @[]]];
+        array = arObj.array;
+        XCTAssertFalse(array.isInvalidated, @"stringArray should be valid after creation.");
+        arObj = nil;
+    }
+    XCTAssertFalse(array.isInvalidated, @"stringArray should still be valid after parent deletion.");
 }
 
 - (void)testDeleteObjectWithArrayProperty {
@@ -223,70 +541,6 @@
 }
 
 - (void)testUnmanaged {
-    RLMRealm *realm = [self realmWithTestPath];
-
-    ArrayPropertyObject *array = [[ArrayPropertyObject alloc] init];
-    array.name = @"name";
-    XCTAssertNotNil(array.array, @"RLMArray property should get created on access");
-
-    XCTAssertNil(array.array.firstObject, @"No objects added yet");
-    XCTAssertNil(array.array.lastObject, @"No objects added yet");
-
-    StringObject *obj1 = [[StringObject alloc] init];
-    obj1.stringCol = @"a";
-    StringObject *obj2 = [[StringObject alloc] init];
-    obj2.stringCol = @"b";
-    StringObject *obj3 = [[StringObject alloc] init];
-    obj3.stringCol = @"c";
-    [array.array addObject:obj1];
-    [array.array addObject:obj2];
-    [array.array addObject:obj3];
-
-    XCTAssertEqualObjects(array.array.firstObject, obj1, @"Objects should be equal");
-    XCTAssertEqualObjects(array.array.lastObject, obj3, @"Objects should be equal");
-    XCTAssertEqualObjects([array.array objectAtIndex:1], obj2, @"Objects should be equal");
-
-    [realm beginWriteTransaction];
-    [realm addObject:array];
-    [realm commitWriteTransaction];
-
-    XCTAssertEqual(array.array.count, 3U, @"Should have two elements in array");
-    XCTAssertEqualObjects([array.array[0] stringCol], @"a", @"First element should have property value 'a'");
-    XCTAssertEqualObjects([array.array[1] stringCol], @"b", @"Second element should have property value 'b'");
-
-    [realm beginWriteTransaction];
-    [array.array replaceObjectAtIndex:0 withObject:obj3];
-    XCTAssertTrue([[array.array objectAtIndex:0] isEqualToObject:obj3], @"Objects should be replaced");
-    array.array[0] = obj1;
-    XCTAssertTrue([obj1 isEqualToObject:[array.array objectAtIndex:0]], @"Objects should be replaced");
-    [array.array removeLastObject];
-    XCTAssertEqual(array.array.count, 2U, @"2 objects left");
-    [array.array addObject:obj1];
-    [array.array removeAllObjects];
-    XCTAssertEqual(array.array.count, 0U, @"All objects removed");
-    [realm commitWriteTransaction];
-
-    ArrayPropertyObject *intArray = [[ArrayPropertyObject alloc] init];
-    IntObject *intObj = [[IntObject alloc] init];
-    intObj.intCol = 1;
-    RLMAssertThrowsWithReasonMatching([intArray.array addObject:(id)intObj], @"IntObject.*StringObject");
-    [intArray.intArray addObject:intObj];
-
-    XCTAssertThrows([intArray.intArray objectsWhere:@"intCol == 1"], @"Should throw on unmanaged RLMArray");
-    XCTAssertThrows(([intArray.intArray objectsWithPredicate:[NSPredicate predicateWithFormat:@"intCol == %i", 1]]), @"Should throw on unmanaged RLMArray");
-    XCTAssertThrows([intArray.intArray sortedResultsUsingKeyPath:@"intCol" ascending:YES], @"Should throw on unmanaged RLMArray");
-
-    XCTAssertEqual(0U, [intArray.intArray indexOfObjectWhere:@"intCol == 1"]);
-    XCTAssertEqual(0U, ([intArray.intArray indexOfObjectWithPredicate:[NSPredicate predicateWithFormat:@"intCol == %i", 1]]));
-
-    XCTAssertEqual([intArray.intArray indexOfObject:intObj], 0U, @"Should be first element");
-    XCTAssertEqual([intArray.intArray indexOfObject:intObj], 0U, @"Should be first element");
-
-    // test unmanaged with literals
-    __unused ArrayPropertyObject *obj = [[ArrayPropertyObject alloc] initWithValue:@[@"n", @[], @[[[IntObject alloc] initWithValue:@[@1]]]]];
-}
-
-- (void)testUnmanagedPrimitive {
     AllPrimitiveArrays *obj = [[AllPrimitiveArrays alloc] init];
     XCTAssertTrue([obj.intObj isKindOfClass:[RLMArray class]]);
     XCTAssertTrue([obj.floatObj isKindOfClass:[RLMArray class]]);
@@ -1435,4 +1689,5 @@
     RLMAssertThrowsWithReasonMatching(array[0] = io, @"write transaction");
     RLMAssertThrowsWithReasonMatching([array setValue:@1 forKey:@"intCol"], @"write transaction");
 }
+#endif
 @end
